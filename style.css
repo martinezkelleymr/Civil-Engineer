@@ -247,6 +247,8 @@ select option { color: #13233a; background: #fff; }
 .preview-list li strong { font-size: 1.15rem; font-weight: 600; }
 
 /* ---------- step 2 ---------- */
+.quote-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+.print-header { display: none; }
 .job-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
 .job { display: flex; align-items: center; gap: 12px; padding: 10px 12px; }
 .job.editing { border-color: var(--accent); }
@@ -340,8 +342,13 @@ select option { color: #13233a; background: #fff; }
   .bg, .theme-switch, .panel-actions, #reset-prices, .calc-form, .type-picker, .link-btn, .compare-cards { display: none !important; }
   body { background: #fff; color: #000; }
   .glass, .glass-inner { background: none; box-shadow: none; backdrop-filter: none; border-color: #ccc; }
-  .panel:first-of-type { display: none; }
-  .price-input { border: none; background: none; padding: 0; }
+  .panel:first-of-type, #compare-section, .quote-fields, .adjusters, .field.inline, .supplier-col, .footer { display: none !important; }
+  .totals { grid-template-columns: 1fr; }
+  .totals-list { max-width: 360px; margin-left: auto; }
+  .print-header { display: flex; flex-direction: column; gap: 2px; padding-bottom: 12px; border-bottom: 2px solid #000; }
+  .print-company { font-size: 1.5rem; }
+  .topbar { display: none; }
+  #estimate-title { display: none; }
 }
 .table .num small { display: inline; font-size: 0.8rem; }
 .table .price-cell small { display: block; }

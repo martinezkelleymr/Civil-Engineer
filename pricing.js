@@ -16,6 +16,9 @@ const SAMPLE_SUPPLIERS = [
       drywall: 15.98, joint_compound: 19.98, drywall_tape: 5.48, drywall_screws: 32.97,
       paint: 38.98, primer: 27.98, tile: 21.9, thinset: 18.98, grout: 21.98,
       brick: 0.68, mortar: 9.98, shingles: 36.97, underlayment: 98, roofing_nails: 69.98, drip_edge: 9.48,
+      lvp: 52.8, lvp_underlay: 29.98, transition: 24.98, baseboard: 18.48, casing: 7.98, brad_nails: 8.97, caulk: 4.98,
+      mosaic: 12.98, mastic: 17.98, grout_unsanded: 16.98, counter_quartz: 75, counter_granite: 60, counter_laminate: 25,
+      sink_cutout: 150, dumpster: 525, contractor_bags: 24.98,
     },
   },
   {
@@ -28,6 +31,9 @@ const SAMPLE_SUPPLIERS = [
       drywall: 14.75, joint_compound: 18.5, drywall_tape: 4.95, drywall_screws: 29.99,
       paint: 34.99, primer: 24.5, tile: 24.5, thinset: 16.75, grout: 19.5,
       brick: 0.62, mortar: 9.25, shingles: 34.5, underlayment: 92.5, roofing_nails: 64.5, drip_edge: 8.75,
+      lvp: 49.9, lvp_underlay: 27.5, transition: 22.5, baseboard: 17.25, casing: 7.5, brad_nails: 8.25, caulk: 4.5,
+      mosaic: 11.5, mastic: 16.5, grout_unsanded: 15.25, counter_quartz: 68, counter_granite: 55, counter_laminate: 22,
+      sink_cutout: 125, dumpster: 495, contractor_bags: 22.5,
     },
   },
   {
@@ -40,6 +46,9 @@ const SAMPLE_SUPPLIERS = [
       drywall: 13.9, joint_compound: 21.25, drywall_tape: 4.75, drywall_screws: 28.5,
       paint: 32.5, primer: 22.99, tile: 19.8, thinset: 17.5, grout: 18.75,
       brick: 0.59, mortar: 8.75, shingles: 38.25, underlayment: 89.99, roofing_nails: 62, drip_edge: 8.25,
+      lvp: 46, lvp_underlay: 26, transition: 21.75, baseboard: 16.4, casing: 6.95, brad_nails: 7.9, caulk: 4.25,
+      mosaic: 10.75, mastic: 15.75, grout_unsanded: 14.5, counter_quartz: 72, counter_granite: 58, counter_laminate: 24,
+      sink_cutout: 175, dumpster: 550, contractor_bags: 21,
     },
   },
 ];

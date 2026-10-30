@@ -28,11 +28,12 @@ function esc(text) {
 }
 
 const state = {
-  type: load("type") || "slab",
+  type: load("type") || "lvp",
   drafts: load("drafts") || {},
   jobs: load("jobs") || [],
   supplier: load("supplier") || BEST,
-  settings: { tax: 7, delivery: 0, labor: 0, contingency: 10, ...(load("settings") || {}) },
+  settings: { tax: 7, delivery: 0, labor: 0, contingency: 10, markup: 20, ...(load("settings") || {}) },
+  quote: { company: "", client: "", address: "", date: "", ...(load("quote") || {}) },
   overrides: load("overrides") || {},
   suppliers: [],
   editingId: null,
@@ -40,7 +41,7 @@ const state = {
 
 // Drop anything saved by an older version that the engine no longer knows about.
 state.jobs = state.jobs.filter((job) => MaterialsAPI.types[job.type]);
-if (!MaterialsAPI.types[state.type]) state.type = "slab";
+if (!MaterialsAPI.types[state.type]) state.type = "lvp";
 
 function persist() {
   save("type", state.type);
@@ -49,6 +50,7 @@ function persist() {
   save("supplier", state.supplier);
   save("settings", state.settings);
   save("overrides", state.overrides);
+  save("quote", state.quote);
 }
 
 function draft(typeId = state.type) {
@@ -136,7 +138,8 @@ function costBreakdown(materialsSubtotal) {
   const labor = materialsSubtotal * (s.labor / 100);
   const beforeContingency = materialsSubtotal + tax + s.delivery + labor;
   const contingency = beforeContingency * (s.contingency / 100);
-  return { materials: materialsSubtotal, tax, delivery: s.delivery, labor, contingency, total: beforeContingency + contingency };
+  const markup = (beforeContingency + contingency) * (s.markup / 100);
+  return { materials: materialsSubtotal, tax, delivery: s.delivery, labor, contingency, markup, total: beforeContingency + contingency + markup };
 }
 
 function renderJobs() {
@@ -190,6 +193,7 @@ function renderEstimate() {
     ["Delivery", c.delivery],
     [`Labor (${s.labor}%)`, c.labor],
     [`Contingency (${s.contingency}%)`, c.contingency],
+    [`Overhead & profit (${s.markup}%)`, c.markup],
   ];
   $("totals-list").innerHTML =
     rows.map(([label, value]) => `<div><dt>${label}</dt><dd>${money.format(value)}</dd></div>`).join("") +
@@ -280,7 +284,18 @@ function renderCompare() {
   if (focusedKey) document.querySelector(`[data-key="${CSS.escape(focusedKey)}"]`)?.focus();
 }
 
+function renderPrintHeader() {
+  const q = state.quote;
+  const date = q.date ? new Date(`${q.date}T00:00`).toLocaleDateString("en-US", { dateStyle: "long" }) : "";
+  $("print-header").innerHTML = `
+    <strong class="print-company">${esc(q.company || "Remodeling estimate")}</strong>
+    <span>Estimate${date ? ` · ${esc(date)}` : ""}</span>
+    ${q.client ? `<span>Prepared for: ${esc(q.client)}</span>` : ""}
+    ${q.address ? `<span>Job address: ${esc(q.address)}</span>` : ""}`;
+}
+
 function renderProject() {
+  renderPrintHeader();
   renderJobs();
   renderSupplierSelect();
   renderEstimate();
@@ -291,7 +306,13 @@ function renderProject() {
 function exportCsv() {
   const cell = (v) => `"${String(v).replace(/"/g, '""')}"`;
   const items = lineItems();
+  const q = state.quote;
   const lines = [
+    ["Company", q.company],
+    ["Client", q.client],
+    ["Job address", q.address],
+    ["Quote date", q.date],
+    [],
     ["Material", "Quantity", "Unit", "Unit price", "Supplier", "Line total", ...state.suppliers.map((s) => `${s.name} unit price`)],
     ...items.map((it) => [
       it.material.name,
@@ -371,7 +392,7 @@ $("supplier-select").addEventListener("change", (e) => {
   persist();
 });
 
-for (const key of ["tax", "delivery", "labor", "contingency"]) {
+for (const key of ["tax", "delivery", "labor", "contingency", "markup"]) {
   $(key).value = state.settings[key];
   $(key).addEventListener("input", (e) => {
     state.settings[key] = Math.max(0, Number(e.target.value) || 0);
@@ -379,6 +400,20 @@ for (const key of ["tax", "delivery", "labor", "contingency"]) {
     renderCompare();
     persist();
   });
+}
+
+document.querySelectorAll("[data-quote]").forEach((input) => {
+  input.value = state.quote[input.dataset.quote];
+  input.addEventListener("input", () => {
+    state.quote[input.dataset.quote] = input.value.trim();
+    renderPrintHeader();
+    persist();
+  });
+});
+if (!state.quote.date) {
+  const today = new Date();
+  state.quote.date = new Date(today - today.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  $("q-date").value = state.quote.date;
 }
 
 $("compare-rows").addEventListener("change", (e) => {

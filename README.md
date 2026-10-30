@@ -1,17 +1,21 @@
-# BuildCost – Construction Materials Cost Calculator
+# BuildCost – Home Remodeling Estimator
 
-A glassmorphic web app that calculates material quantities for a construction project,
-shows the price per material, estimates the total cost, and compares suppliers.
+A glassmorphic web app for a home remodeling company. It calculates material quantities for a job,
+shows the price per material, estimates the total cost (including labor, overhead and profit),
+compares suppliers, and prints a client-ready quote.
 
 ## Features
-- 7 calculators: concrete slab, wall framing, drywall, interior paint, tile flooring, brick wall, shingle roof
-- Waste allowance per calculation; quantities rounded up to how materials are sold (bags, sheets, boxes…)
-- Combine several calculations into one project estimate
+- 12 calculators: vinyl plank floor, tile floor/shower, kitchen backsplash, countertops, drywall,
+  interior paint, baseboard & trim, wall framing, demolition & haul-off, concrete slab, brick wall, shingle roof
+- Waste allowance per calculation; quantities rounded up to how materials are sold (boxes, sheets, bags…)
+- Combine several calculations (rooms or tasks) into one job estimate
 - Buy from one supplier or "Best price" (cheapest supplier per item)
-- Totals with sales tax, delivery, labor (% of materials) and contingency
+- Totals with sales tax, delivery, labor (% of materials), contingency and overhead & profit
+- Quote details (company, client, job address, date) and a print view that shows only the client quote –
+  supplier names and the comparison table stay internal
 - Supplier comparison table with the cheapest price highlighted, plus savings per option
 - Click any price to enter your own supplier quote (saved in the browser)
-- CSV export, print view, Light / Dark / System themes
+- CSV export, Light / Dark / System themes
 
 ## Files
 - `calculator.js` – quantity engine (`MaterialsAPI`): formulas and rules of thumb, no DOM code

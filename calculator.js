@@ -1,6 +1,7 @@
 // Quantity engine ("build calculator API"): turns project dimensions into material quantities.
 // Pure functions only – no DOM access – so it can be reused or moved behind a server endpoint.
 
+// `exact` items are counted, not cut, so the waste allowance does not apply to them.
 const MATERIALS = {
   concrete_bag:   { name: "Concrete mix, 80 lb bag",          unit: "bag",    step: 1 },
   ready_mix:      { name: "Ready-mix concrete",               unit: "yd³",    step: 0.25 },
@@ -25,6 +26,22 @@ const MATERIALS = {
   underlayment:   { name: "Synthetic underlayment, 1,000 ft²", unit: "roll",  step: 1 },
   roofing_nails:  { name: "Coil roofing nails, 7,200 ct box", unit: "box",    step: 1 },
   drip_edge:      { name: "Drip edge, 10 ft",                 unit: "piece",  step: 1 },
+  lvp:            { name: "Luxury vinyl plank, 20 ft² box",   unit: "box",    step: 1 },
+  lvp_underlay:   { name: "Foam underlayment, 100 ft² roll",  unit: "roll",   step: 1 },
+  transition:     { name: "Floor transition strip",           unit: "each",   step: 1, exact: true },
+  baseboard:      { name: '3-1/4" MDF baseboard, 16 ft',      unit: "piece",  step: 1 },
+  casing:         { name: "Door casing, 7 ft",                unit: "piece",  step: 1 },
+  brad_nails:     { name: "18 ga brad nails, 1,000 ct",       unit: "box",    step: 1 },
+  caulk:          { name: "Paintable caulk, 10 oz tube",      unit: "tube",   step: 1 },
+  mosaic:         { name: "Backsplash mosaic tile, 1 ft² sheet", unit: "sheet", step: 1 },
+  mastic:         { name: "Tile mastic, 1 gal",               unit: "gal",    step: 1 },
+  grout_unsanded: { name: "Unsanded grout, 10 lb bag",        unit: "bag",    step: 1 },
+  counter_quartz: { name: "Quartz countertop, fabricated",    unit: "ft²",    step: 1 },
+  counter_granite:{ name: "Granite countertop, fabricated",   unit: "ft²",    step: 1 },
+  counter_laminate:{ name: "Laminate countertop",             unit: "ft²",    step: 1 },
+  sink_cutout:    { name: "Sink cutout & polish",             unit: "each",   step: 1, exact: true },
+  dumpster:       { name: "20 yd³ dumpster rental",           unit: "each",   step: 1, exact: true },
+  contractor_bags:{ name: "Contractor bags, 32 ct box",       unit: "box",    step: 1 },
 };
 
 // Rules of thumb used below (adjust here if your trade uses different figures).
@@ -49,7 +66,24 @@ const RULES = {
   underlaymentFt2PerRoll: 1000,
   nailsPerSquare: 320,       // 6 nails per shingle (high-wind pattern)
   nailsPerBox: 7200,
+  lvpFt2PerBox: 20,
+  underlayFt2PerRoll: 100,
+  baseboardFt: 16,
+  doorWidthFt: 3,
+  casingPiecesPerDoor: 5,   // both sides: 4 legs + 2 heads cut from one piece
+  casingFt: 7,
+  bradsPerFt: 1.5,
+  bradsPerBox: 1000,
+  caulkFtPerTube: 50,
+  mosaicFt2PerSheet: 1,
+  masticFt2PerGal: 40,
+  unsandedFt2PerBag: 50,
+  dumpsterYd3: 20,
+  bagsFt2PerBox: 250,
 };
+
+// Cubic yards of debris per ft² of work area, by demolition scope.
+const DEBRIS_FACTORS = { flooring: 0.01, room: 0.08, gut: 0.05 };
 
 const PITCH_FACTORS = { "4/12": 1.054, "6/12": 1.118, "8/12": 1.202, "10/12": 1.302, "12/12": 1.414 };
 
@@ -57,6 +91,107 @@ const num = (label, unit, value, min = 0, step = 1) => ({ type: "number", label,
 const pick = (label, options, value) => ({ type: "select", label, options, value });
 
 const PROJECT_TYPES = {
+  lvp: {
+    label: "Vinyl plank floor",
+    icon: "🪵",
+    waste: 10,
+    fields: {
+      length: num("Room length", "ft", 14, 0, 0.5),
+      width: num("Room width", "ft", 12, 0, 0.5),
+      pad: pick("Underlayment", { attached: "Attached pad", separate: "Separate foam" }, "attached"),
+      doorways: num("Doorway transitions", "", 1, 0, 1),
+    },
+    compute(v) {
+      const area = v.length * v.width;
+      const items = [["lvp", area / RULES.lvpFt2PerBox]];
+      if (v.pad === "separate") items.push(["lvp_underlay", area / RULES.underlayFt2PerRoll]);
+      if (v.doorways > 0) items.push(["transition", v.doorways]);
+      return { items, summary: `${fmt(area)} ft² of floor` };
+    },
+  },
+
+  trim: {
+    label: "Baseboard & trim",
+    icon: "📏",
+    waste: 10,
+    fields: {
+      length: num("Room length", "ft", 14, 0, 0.5),
+      width: num("Room width", "ft", 12, 0, 0.5),
+      doors: num("Doors", "", 1, 0, 1),
+      casing: pick("Replace door casing", { yes: "Yes", no: "No" }, "yes"),
+    },
+    compute(v) {
+      const baseFt = Math.max(0, 2 * (v.length + v.width) - v.doors * RULES.doorWidthFt);
+      const casingPieces = v.casing === "yes" ? v.doors * RULES.casingPiecesPerDoor : 0;
+      const trimFt = baseFt + casingPieces * RULES.casingFt;
+      const items = [["baseboard", baseFt / RULES.baseboardFt]];
+      if (casingPieces) items.push(["casing", casingPieces]);
+      items.push(["brad_nails", (trimFt * RULES.bradsPerFt) / RULES.bradsPerBox], ["caulk", trimFt / RULES.caulkFtPerTube]);
+      return { items, summary: `${fmt(baseFt)} ft of baseboard` };
+    },
+  },
+
+  backsplash: {
+    label: "Kitchen backsplash",
+    icon: "🍳",
+    waste: 10,
+    fields: {
+      length: num("Wall length", "ft", 16, 0, 0.5),
+      height: num("Backsplash height", "in", 18, 0, 1),
+      openings: num("Window/range area to skip", "ft²", 0, 0, 1),
+    },
+    compute(v) {
+      const area = Math.max(0, v.length * (v.height / 12) - v.openings);
+      return {
+        items: [
+          ["mosaic", area / RULES.mosaicFt2PerSheet],
+          ["mastic", area / RULES.masticFt2PerGal],
+          ["grout_unsanded", area / RULES.unsandedFt2PerBag],
+        ],
+        summary: `${fmt(area)} ft² of tile`,
+      };
+    },
+  },
+
+  countertop: {
+    label: "Countertops",
+    icon: "🪨",
+    waste: 5,
+    fields: {
+      length: num("Counter run", "ft", 16, 0, 0.5),
+      depth: num("Depth", "in", 25.5, 0, 0.5),
+      island: num("Island area", "ft²", 0, 0, 1),
+      material: pick("Material", { counter_quartz: "Quartz", counter_granite: "Granite", counter_laminate: "Laminate" }, "counter_quartz"),
+      sinks: num("Sink cutouts", "", 1, 0, 1),
+    },
+    compute(v) {
+      const area = v.length * (v.depth / 12) + v.island;
+      const items = [[v.material, area]];
+      if (v.sinks > 0 && v.material !== "counter_laminate") items.push(["sink_cutout", v.sinks]);
+      return { items, summary: `${fmt(area)} ft² of countertop` };
+    },
+  },
+
+  demo: {
+    label: "Demolition & haul-off",
+    icon: "🔨",
+    waste: 0,
+    fields: {
+      area: num("Work area", "ft²", 150, 0, 1),
+      scope: pick("Scope", { flooring: "Flooring removal", room: "Kitchen / bath tear-out", gut: "Whole-house gut" }, "room"),
+    },
+    compute(v) {
+      const debris = v.area * DEBRIS_FACTORS[v.scope];
+      return {
+        items: [
+          ["dumpster", debris / RULES.dumpsterYd3],
+          ["contractor_bags", v.area / RULES.bagsFt2PerBox],
+        ],
+        summary: `≈ ${fmt(debris)} yd³ of debris`,
+      };
+    },
+  },
+
   slab: {
     label: "Concrete slab",
     icon: "🧱",
@@ -90,7 +225,7 @@ const PROJECT_TYPES = {
 
   framing: {
     label: "Wall framing",
-    icon: "🪵",
+    icon: "🧰",
     waste: 10,
     fields: {
       length: num("Total wall length", "ft", 40, 0, 0.5),
@@ -160,7 +295,7 @@ const PROJECT_TYPES = {
   },
 
   tile: {
-    label: "Tile flooring",
+    label: "Tile floor / shower",
     icon: "🔲",
     waste: 10,
     fields: {
@@ -237,12 +372,15 @@ function roundUp(qty, step) {
   return Math.ceil(qty / step - 1e-9) * step;
 }
 
+// Interior remodeling first, then structural and exterior work.
+const TYPE_ORDER = ["lvp", "tile", "backsplash", "countertop", "drywall", "paint", "trim", "framing", "demo", "slab", "brick", "roof"];
+
 const MaterialsAPI = {
   materials: MATERIALS,
-  types: PROJECT_TYPES,
+  types: Object.fromEntries(TYPE_ORDER.map((id) => [id, PROJECT_TYPES[id]])),
 
   defaults(typeId) {
-    const type = PROJECT_TYPES[typeId];
+    const type = MaterialsAPI.types[typeId];
     const inputs = Object.fromEntries(Object.entries(type.fields).map(([k, f]) => [k, f.value]));
     return { ...inputs, waste: type.waste };
   },
@@ -250,7 +388,7 @@ const MaterialsAPI = {
   // Returns { items: [{ materialId, quantity }], summary } with waste applied and
   // quantities rounded up to the way each material is sold.
   calculate(typeId, rawInputs) {
-    const type = PROJECT_TYPES[typeId];
+    const type = MaterialsAPI.types[typeId];
     if (!type) throw new Error(`Unknown project type: ${typeId}`);
     const inputs = {};
     for (const [key, field] of Object.entries(type.fields)) {
@@ -264,7 +402,7 @@ const MaterialsAPI = {
       items: items
         .map(([materialId, qty]) => ({
           materialId,
-          quantity: roundUp(qty * waste, MATERIALS[materialId].step),
+          quantity: roundUp(MATERIALS[materialId].exact ? qty : qty * waste, MATERIALS[materialId].step),
         }))
         .filter((item) => item.quantity > 0),
     };

@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BuildCost Calculator</title>
-  <meta name="description" content="A glassmorphic construction materials cost calculator with supplier price comparison." />
+  <title>BuildCost Remodel Estimator</title>
+  <meta name="description" content="Home remodeling estimator: material quantities, client quotes and supplier price comparison." />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏗️</text></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -32,7 +32,7 @@
     <header class="topbar">
       <div>
         <h1>🏗️ BuildCost</h1>
-        <p class="muted">Material quantities, prices and supplier comparison in one place.</p>
+        <p class="muted">Home remodeling estimates: materials, client quotes and supplier prices in one place.</p>
       </div>
       <div class="theme-switch glass" role="radiogroup" aria-label="Color theme">
         <button type="button" role="radio" data-theme-choice="light" aria-checked="false">☀️ Light</button>
@@ -55,7 +55,7 @@
           </label>
           <label class="field wide">
             <span>Label</span>
-            <input id="job-label" type="text" maxlength="60" placeholder="e.g. Garage slab" />
+            <input id="job-label" type="text" maxlength="60" placeholder="e.g. Master bath floor" />
           </label>
         </div>
 
@@ -77,10 +77,19 @@
         <h2 id="estimate-title">2 · Project estimate</h2>
         <div class="panel-actions">
           <button id="export-btn" type="button" class="btn">⬇ CSV</button>
-          <button id="print-btn" type="button" class="btn">🖨 Print</button>
+          <button id="print-btn" type="button" class="btn">🖨 Client quote</button>
           <button id="clear-btn" type="button" class="btn danger">Clear</button>
         </div>
       </div>
+
+      <div class="quote-fields">
+        <label class="field"><span>Company</span><input id="q-company" data-quote="company" type="text" maxlength="80" placeholder="Your remodeling company" /></label>
+        <label class="field"><span>Client</span><input id="q-client" data-quote="client" type="text" maxlength="80" placeholder="Homeowner name" /></label>
+        <label class="field wide"><span>Job address</span><input id="q-address" data-quote="address" type="text" maxlength="120" placeholder="Street, city" /></label>
+        <label class="field"><span>Quote date</span><input id="q-date" data-quote="date" type="date" /></label>
+      </div>
+
+      <div id="print-header" class="print-header"></div>
 
       <ul id="job-list" class="job-list"></ul>
       <p id="empty-state" class="empty muted">Add a calculation above to start your estimate.</p>
@@ -106,6 +115,7 @@
             <label class="field"><span>Delivery <small>$</small></span><input id="delivery" type="number" min="0" step="5" /></label>
             <label class="field"><span>Labor <small>% of materials</small></span><input id="labor" type="number" min="0" step="5" /></label>
             <label class="field"><span>Contingency <small>%</small></span><input id="contingency" type="number" min="0" step="1" /></label>
+            <label class="field"><span>Overhead &amp; profit <small>%</small></span><input id="markup" type="number" min="0" step="1" /></label>
           </div>
           <dl id="totals-list" class="totals-list glass-inner"></dl>
         </div>
