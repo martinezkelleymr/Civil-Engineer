@@ -5,8 +5,17 @@ shows the price per material, estimates the total cost (including labor, overhea
 compares suppliers, and prints a client-ready quote.
 
 ## Features
-- 12 calculators: vinyl plank floor, tile floor/shower, kitchen backsplash, countertops, drywall,
-  interior paint, baseboard & trim, wall framing, demolition & haul-off, concrete slab, brick wall, shingle roof
+- 16 calculators: vinyl plank floor, tile floor/shower, kitchen backsplash, countertops, drywall,
+  interior paint, baseboard & trim, demolition & haul-off, impact windows & doors, stucco, CBS block wall,
+  wall framing, concrete slab, pavers / pool deck, shingle roof, brick wall
+- Florida edition: project location (city, county, sales surtax), Florida code items in the slab, framing
+  and roof calculators, a Florida materials catalog, and a "Florida codes & permits" checklist that lists
+  the permits, building-code items and consumer laws for the work in your estimate
+- App layout with a sidebar, 1-2-3 progress steps and a running estimate total; works on phones
+- Quick sizes, − / + steppers and info tips on the calculator; live materials preview
+- Toasts and highlights when you add a calculation, change prices or export
+- Inline quantity adjustments in the estimate, "Buy from" supplier cards, savings highlighting
+- Saved estimates ("My estimates") and a "Try a sample project" button for first-time users
 - Waste allowance per calculation; quantities rounded up to how materials are sold (boxes, sheets, bags…)
 - Combine several calculations (rooms or tasks) into one job estimate
 - Buy from one supplier or "Best price" (cheapest supplier per item)
@@ -15,7 +24,10 @@ compares suppliers, and prints a client-ready quote.
   supplier names and the comparison table stay internal
 - Supplier comparison table with the cheapest price highlighted, plus savings per option
 - Click any price to enter your own supplier quote (saved in the browser)
-- CSV export, Light / Dark / System themes
+- CSV export, Light / Dark / System themes, reduced-motion support
+
+Florida code and law references are general guidance, not legal advice – confirm with the local
+building department.
 
 ## Files
 - `calculator.js` – quantity engine (`MaterialsAPI`): formulas and rules of thumb, no DOM code
