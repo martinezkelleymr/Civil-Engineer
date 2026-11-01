@@ -42,6 +42,25 @@ const MATERIALS = {
   sink_cutout:    { name: "Sink cutout & polish",             unit: "each",   step: 1, exact: true },
   dumpster:       { name: "20 yd³ dumpster rental",           unit: "each",   step: 1, exact: true },
   contractor_bags:{ name: "Contractor bags, 32 ct box",       unit: "box",    step: 1 },
+  // Florida: CBS construction, code-required items and hurricane protection
+  block_cmu:      { name: "8×8×16 concrete block (CMU)",      unit: "each",   step: 1 },
+  block_bond:     { name: "8×8×16 bond beam U-block",         unit: "each",   step: 1 },
+  rebar5:         { name: "#5 rebar, 20 ft stick",            unit: "stick",  step: 1 },
+  grout_fill:     { name: "Masonry grout / fill concrete",    unit: "yd³",    step: 0.25 },
+  vapor_barrier:  { name: "6-mil vapor retarder, 10×100 ft",  unit: "roll",   step: 1 },
+  pt_plate:       { name: "2×4×8 pressure-treated plate",     unit: "each",   step: 1 },
+  hurricane_tie:  { name: "Galvanized hurricane tie",         unit: "each",   step: 1, exact: true },
+  stucco_bag:     { name: "Portland cement stucco, 80 lb",    unit: "bag",    step: 1 },
+  metal_lath:     { name: "Galvanized metal lath, 27\"×8 ft", unit: "sheet",  step: 1 },
+  elastomeric:    { name: "Elastomeric exterior paint",       unit: "gal",    step: 1 },
+  impact_window:  { name: "Impact-rated window, ~3×5 ft",     unit: "each",   step: 1, exact: true },
+  impact_slider:  { name: "Impact sliding glass door, 8 ft",  unit: "each",   step: 1, exact: true },
+  impact_door:    { name: "Impact entry door",                unit: "each",   step: 1, exact: true },
+  pavers:         { name: "Concrete pavers",                  unit: "ft²",    step: 1 },
+  limerock:       { name: "Crushed limerock base",            unit: "ton",    step: 0.5 },
+  poly_sand:      { name: "Polymeric joint sand, 50 lb",      unit: "bag",    step: 1 },
+  self_adhered:   { name: "Self-adhered roof underlayment, 2 sq", unit: "roll", step: 1 },
+  ring_nails:     { name: "8d ring-shank nails, 5 lb box",    unit: "box",    step: 1 },
 };
 
 // Rules of thumb used below (adjust here if your trade uses different figures).
@@ -80,6 +99,24 @@ const RULES = {
   unsandedFt2PerBag: 50,
   dumpsterYd3: 20,
   bagsFt2PerBox: 250,
+  vaporFt2PerRoll: 1000,
+  blockFaceFt2: 0.889,       // 8×16 in face
+  blocksPerMortarBag: 30,
+  bondBeamBlockFt: 1.333,    // 16 in per U-block
+  groutFt3PerCellFt: 0.17,   // one 8 in CMU cell, per foot of height
+  groutFt3PerBondFt: 0.25,
+  rebarLapFt: 2,
+  stuccoFt2PerBag3Coat: 9,   // 7/8 in, three coats
+  stuccoFt2PerBag1Coat: 18,  // 1/2 in one-coat system
+  lathFt2PerSheet: 18,
+  elastomericFt2PerGal: 100, // per coat
+  paverSandFt2PerBag: 50,
+  limerockTonsPerYd3: 1.4,
+  selfAdheredFt2PerRoll: 200,
+  deckSheetFt2: 32,
+  ringNailsPerSheet: 90,     // 6 in o.c. edges and field
+  ringNailsPerBox: 500,
+  trussSpacingIn: 24,
 };
 
 // Cubic yards of debris per ft² of work area, by demolition scope.
@@ -203,6 +240,7 @@ const PROJECT_TYPES = {
       supply: pick("Concrete", { ready_mix: "Ready-mix truck", concrete_bag: "80 lb bags" }, "ready_mix"),
       gravel: num("Gravel base depth", "in", 4, 0, 1),
       rebar: num("Rebar grid spacing (0 = none)", "in", 18, 0, 1),
+      vapor: pick("6-mil vapor retarder", { yes: "Yes (code)", no: "No" }, "yes"),
     },
     compute(v) {
       const area = v.length * v.width;
@@ -219,6 +257,7 @@ const PROJECT_TYPES = {
         const linearFt = barsAlongLength * v.length + barsAlongWidth * v.width;
         items.push(["rebar", (linearFt * RULES.rebarOverlap) / 20]);
       }
+      if (v.vapor === "yes") items.push(["vapor_barrier", area / RULES.vaporFt2PerRoll]);
       return { items, summary: `${fmt(area)} ft² · ${fmt(ft3 / 27)} yd³` };
     },
   },
@@ -233,18 +272,20 @@ const PROJECT_TYPES = {
       spacing: pick("Stud spacing", { 16: '16" on center', 24: '24" on center' }, "16"),
       openings: num("Doors + windows", "", 3, 0, 1),
       corners: num("Corners", "", 4, 0, 1),
+      onSlab: pick("Bottom plate on concrete", { yes: "Yes – pressure-treated", no: "No" }, "yes"),
+      ties: pick("Hurricane ties at roof", { yes: "Yes", no: "No" }, "yes"),
     },
     compute(v) {
       const studs = Math.ceil((v.length * 12) / v.spacing) + 1 + v.openings * 2 + v.corners * 2;
-      const plates = (v.length * 3) / 8; // one bottom + two top plates
-      return {
-        items: [
-          [Number(v.height) === 10 ? "stud_10" : "stud_8", studs],
-          ["plate", plates],
-          ["framing_nails", ((studs + plates) * RULES.nailLbPerPiece) / 5],
-        ],
-        summary: `${studs} studs before waste`,
-      };
+      const bottom = v.length / 8;
+      const top = (v.length * 2) / 8; // two top plates
+      const plates = bottom + top;
+      const items = [[Number(v.height) === 10 ? "stud_10" : "stud_8", studs]];
+      if (v.onSlab === "yes") items.push(["pt_plate", bottom], ["plate", top]);
+      else items.push(["plate", plates]);
+      items.push(["framing_nails", ((studs + plates) * RULES.nailLbPerPiece) / 5]);
+      if (v.ties === "yes") items.push(["hurricane_tie", Math.ceil((v.length * 12) / RULES.trussSpacingIn) + 1]);
+      return { items, summary: `${studs} studs before waste` };
     },
   },
 
@@ -342,22 +383,116 @@ const PROJECT_TYPES = {
       length: num("Footprint length", "ft", 40, 0, 0.5),
       width: num("Footprint width", "ft", 30, 0, 0.5),
       pitch: pick("Roof pitch", Object.fromEntries(Object.keys(PITCH_FACTORS).map((p) => [p, p])), "6/12"),
+      barrier: pick("Underlayment", { self: "Self-adhered (FL secondary water barrier)", synthetic: "Synthetic" }, "self"),
+      renail: pick("Re-nail roof deck (FL reroof)", { yes: "Yes", no: "No" }, "yes"),
     },
     compute(v) {
       const area = v.length * v.width * PITCH_FACTORS[v.pitch];
       const squares = area / 100;
-      return {
-        items: [
-          ["shingles", squares * RULES.bundlesPerSquare],
-          ["underlayment", area / RULES.underlaymentFt2PerRoll],
-          ["roofing_nails", (squares * RULES.nailsPerSquare) / RULES.nailsPerBox],
-          ["drip_edge", (2 * (v.length + v.width)) / 10],
-        ],
-        summary: `${fmt(area)} ft² · ${fmt(squares)} squares`,
-      };
+      const items = [
+        ["shingles", squares * RULES.bundlesPerSquare],
+        v.barrier === "synthetic"
+          ? ["underlayment", area / RULES.underlaymentFt2PerRoll]
+          : ["self_adhered", area / RULES.selfAdheredFt2PerRoll],
+        ["roofing_nails", (squares * RULES.nailsPerSquare) / RULES.nailsPerBox],
+        ["drip_edge", (2 * (v.length + v.width)) / 10],
+      ];
+      if (v.renail === "yes") items.push(["ring_nails", ((area / RULES.deckSheetFt2) * RULES.ringNailsPerSheet) / RULES.ringNailsPerBox]);
+      return { items, summary: `${fmt(area)} ft² · ${fmt(squares)} squares` };
     },
   },
 };
+
+Object.assign(PROJECT_TYPES, {
+  block: {
+    label: "CBS block wall",
+    icon: "🧱",
+    florida: true,
+    waste: 5,
+    fields: {
+      length: num("Wall length", "ft", 40, 0, 0.5),
+      height: num("Wall height", "ft", 9.33, 0, 0.5),
+      openings: num("Door/window area", "ft²", 40, 0, 1),
+      spacing: num("Vertical rebar spacing", "in", 48, 8, 8),
+      bond: pick("Bond beam on top", { yes: "Yes", no: "No" }, "yes"),
+    },
+    compute(v) {
+      const area = Math.max(0, v.length * v.height - v.openings);
+      const blocks = area / RULES.blockFaceFt2;
+      const cells = Math.ceil((v.length * 12) / v.spacing) + 1;
+      const bondFt = v.bond === "yes" ? v.length : 0;
+      const items = [
+        ["block_cmu", blocks],
+        ["mortar", blocks / RULES.blocksPerMortarBag],
+        ["rebar5", (cells * (v.height + RULES.rebarLapFt) + bondFt * 2 * RULES.rebarOverlap) / 20],
+        ["grout_fill", (cells * v.height * RULES.groutFt3PerCellFt + bondFt * RULES.groutFt3PerBondFt) / 27],
+      ];
+      if (bondFt) items.push(["block_bond", bondFt / RULES.bondBeamBlockFt]);
+      return { items, summary: `${fmt(area)} ft² of wall · ${cells} grouted cells` };
+    },
+  },
+
+  stucco: {
+    label: "Stucco",
+    icon: "🪣",
+    florida: true,
+    waste: 10,
+    fields: {
+      area: num("Wall area", "ft²", 600, 0, 10),
+      system: pick("System", { three: "Three-coat (7/8 in)", one: "One-coat (1/2 in)" }, "three"),
+      base: pick("Over", { block: "CBS block", frame: "Wood frame (needs lath)" }, "block"),
+      paint: pick("Elastomeric paint, 2 coats", { yes: "Yes", no: "No" }, "yes"),
+    },
+    compute(v) {
+      const perBag = v.system === "one" ? RULES.stuccoFt2PerBag1Coat : RULES.stuccoFt2PerBag3Coat;
+      const items = [["stucco_bag", v.area / perBag]];
+      if (v.base === "frame") items.push(["metal_lath", v.area / RULES.lathFt2PerSheet]);
+      if (v.paint === "yes") items.push(["elastomeric", (v.area * 2) / RULES.elastomericFt2PerGal]);
+      return { items, summary: `${fmt(v.area)} ft² of wall` };
+    },
+  },
+
+  impact: {
+    label: "Impact windows & doors",
+    icon: "🪟",
+    florida: true,
+    waste: 0,
+    fields: {
+      windows: num("Windows", "", 8, 0, 1),
+      sliders: num("Sliding glass doors", "", 1, 0, 1),
+      doors: num("Entry doors", "", 1, 0, 1),
+      caulk: pick("Perimeter sealant", { yes: "Yes", no: "No" }, "yes"),
+    },
+    compute(v) {
+      const items = [
+        ["impact_window", v.windows],
+        ["impact_slider", v.sliders],
+        ["impact_door", v.doors],
+      ];
+      const openings = v.windows + v.sliders + v.doors;
+      if (v.caulk === "yes") items.push(["caulk", openings / 2]);
+      return { items, summary: `${openings} openings` };
+    },
+  },
+
+  pavers: {
+    label: "Pavers / pool deck",
+    icon: "🟫",
+    florida: true,
+    waste: 5,
+    fields: {
+      length: num("Length", "ft", 16, 0, 0.5),
+      width: num("Width", "ft", 12, 0, 0.5),
+      base: num("Limerock base depth", "in", 4, 0, 1),
+    },
+    compute(v) {
+      const area = v.length * v.width;
+      const items = [["pavers", area], ["poly_sand", area / RULES.paverSandFt2PerBag]];
+      if (v.base > 0) items.push(["limerock", ((area * (v.base / 12)) / 27) * RULES.limerockTonsPerYd3]);
+      return { items, summary: `${fmt(area)} ft² of pavers` };
+    },
+  },
+});
 
 function roomArea(v) {
   return Math.max(0, 2 * (v.length + v.width) * v.height - v.openings);
@@ -372,8 +507,9 @@ function roundUp(qty, step) {
   return Math.ceil(qty / step - 1e-9) * step;
 }
 
-// Interior remodeling first, then structural and exterior work.
-const TYPE_ORDER = ["lvp", "tile", "backsplash", "countertop", "drywall", "paint", "trim", "framing", "demo", "slab", "brick", "roof"];
+// Interior remodeling first, then Florida exterior, structural and site work.
+const TYPE_ORDER = ["lvp", "tile", "backsplash", "countertop", "drywall", "paint", "trim", "demo",
+  "impact", "stucco", "block", "framing", "slab", "pavers", "roof", "brick"];
 
 const MaterialsAPI = {
   materials: MATERIALS,

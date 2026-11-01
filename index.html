@@ -4,11 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BuildCost Remodel Estimator</title>
-  <meta name="description" content="Home remodeling estimator: material quantities, client quotes and supplier price comparison." />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏗️</text></svg>" />
+  <meta name="description" content="Florida home remodeling estimator: material quantities, client quotes, supplier price comparison, and Florida codes and permits." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect width='24' height='24' rx='5' fill='%23F5A524'/><path d='M2 20h20M4 20V9l8-5 8 5v11M9 20v-6h6v6' fill='none' stroke='%2315181C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <meta name="color-scheme" content="light dark" />
   <link rel="stylesheet" href="style.css" />
   <script>
@@ -22,125 +22,330 @@
   </script>
 </head>
 <body>
-  <div class="bg">
-    <span class="blob blob-1"></span>
-    <span class="blob blob-2"></span>
-    <span class="blob blob-3"></span>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="shell">
+    <aside class="sidebar" id="sidebar" aria-label="App menu">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 20h20M4 20V9l8-5 8 5v11M9 20v-6h6v6" /></svg></span>
+        <span class="brand-text"><strong>BuildCost</strong><small>Remodel Estimator</small></span>
+        <button type="button" class="icon-btn menu-x" id="menu-close" aria-label="Close menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg></button>
+      </div>
+
+      <button type="button" class="location-btn" id="location-btn" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
+        <span class="location-text"><strong id="loc-city"></strong><small id="loc-meta"></small></span>
+        <span class="location-change">Change</span>
+      </button>
+
+      <nav class="nav" aria-label="Main">
+        <a href="#calculator" data-nav="calculator"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2h14v20H5ZM8 6h8v4H8ZM8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" /></svg><span>Calculator</span></a>
+        <a href="#estimate" data-nav="estimate"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6v3H9ZM7 5H5v16h14V5h-2M9 12h6M9 16h4" /></svg><span>Estimate</span><b class="nav-badge" id="badge-jobs"></b></a>
+        <a href="#compare" data-nav="compare"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 6h11v10H2ZM13 9h4l4 4v3h-8M8 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM19 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z" /></svg><span>Suppliers</span></a>
+        <a href="#materials" data-nav="materials"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8 12 3 3 8v8l9 5 9-5ZM3 8l9 5 9-5M12 13v8" /></svg><span>Florida materials</span></a>
+        <a href="#codes" data-nav="codes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h11a3 3 0 0 1 3 3v14H7a3 3 0 0 1-3-3ZM4 18a3 3 0 0 1 3-3h11M8 8h6" /></svg><span>FL codes &amp; permits</span></a>
+      </nav>
+
+      <section class="saved" aria-labelledby="saved-title">
+        <div class="saved-head">
+          <h2 id="saved-title">My estimates</h2>
+          <button type="button" class="icon-btn small" id="save-btn" aria-label="Save current estimate" title="Save current estimate"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h11l3 3v15H5ZM8 3v5h7V3M8 21v-7h8v7" /></svg></button>
+        </div>
+        <ul id="saved-list" class="saved-list"></ul>
+      </section>
+
+      <div class="sidebar-foot">
+        <div class="seg seg-dark theme-switch" role="radiogroup" aria-label="Color theme">
+          <button type="button" role="radio" data-theme-choice="light" aria-checked="false">Light</button>
+          <button type="button" role="radio" data-theme-choice="dark" aria-checked="false">Dark</button>
+          <button type="button" role="radio" data-theme-choice="system" aria-checked="false">System</button>
+        </div>
+        <p id="price-source" class="sidebar-note"></p>
+      </div>
+    </aside>
+    <div class="scrim" id="scrim" hidden></div>
+
+    <div class="content">
+      <header class="topbar">
+        <button type="button" class="icon-btn menu-toggle" id="menu-open" aria-label="Open menu" aria-controls="sidebar" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg></button>
+        <ol class="steps" aria-label="Progress">
+          <li><a href="#calculator" data-step="calculator"><span class="step-dot">1</span><span class="step-label">Calculate</span></a></li>
+          <li><a href="#estimate" data-step="estimate"><span class="step-dot">2</span><span class="step-label">Estimate</span></a></li>
+          <li><a href="#compare" data-step="compare"><span class="step-dot">3</span><span class="step-label">Compare</span></a></li>
+        </ol>
+        <a href="#estimate" class="total-pill" id="total-pill">
+          <span><small id="pill-meta">Estimate</small><strong id="pill-total">$0.00</strong></span>
+          <span class="pill-cta">Review</span>
+        </a>
+      </header>
+
+      <main id="main" tabindex="-1">
+        <!-- ============ Calculator ============ -->
+        <section class="view" data-view="calculator" aria-labelledby="calc-title">
+          <div class="view-head">
+            <div>
+              <h1 id="calc-title">Calculate materials</h1>
+              <p class="muted">Pick what you're building, enter sizes, and add it to your estimate.</p>
+            </div>
+          </div>
+
+          <div class="type-tools">
+            <label class="search">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+              <span class="sr-only">Search project types</span>
+              <input id="type-search" type="search" placeholder="Search: tile, stucco, roof…" autocomplete="off" />
+            </label>
+            <div class="seg" role="group" aria-label="Filter project types" id="type-filter">
+              <button type="button" data-filter="all" aria-pressed="true">All</button>
+              <button type="button" data-filter="interior" aria-pressed="false">Interior</button>
+              <button type="button" data-filter="exterior" aria-pressed="false">Exterior</button>
+              <button type="button" data-filter="florida" aria-pressed="false">Florida</button>
+            </div>
+          </div>
+          <div id="type-picker" class="type-grid" role="tablist" aria-label="Project type"></div>
+          <p id="type-empty" class="muted" hidden></p>
+
+          <div class="calc-layout">
+            <form id="calc-form" class="card calc-form" autocomplete="off">
+              <div class="card-head">
+                <h2 id="form-title">Project</h2>
+                <span id="edit-flag" class="chip chip-blue" hidden>Editing</span>
+              </div>
+              <div id="presets" class="presets"></div>
+              <div id="fields" class="fields"></div>
+              <div class="fields fields-extra">
+                <div class="field">
+                  <div class="field-label"><label for="waste">Waste allowance</label><button type="button" class="info" data-tip="waste" aria-label="About waste allowance" aria-expanded="false">i</button></div>
+                  <div class="stepper"><button type="button" class="step-btn" data-step-for="waste" data-dir="-1" aria-label="Decrease waste">−</button><input id="waste" name="waste" type="number" inputmode="decimal" min="0" step="1" /><span class="unit">%</span><button type="button" class="step-btn" data-step-for="waste" data-dir="1" aria-label="Increase waste">+</button></div>
+                  <p class="tip" data-tip-body="waste" hidden></p>
+                </div>
+                <div class="field field-wide">
+                  <div class="field-label"><label for="job-label">Label</label></div>
+                  <input id="job-label" type="text" maxlength="60" placeholder="e.g. Master bath floor" />
+                </div>
+              </div>
+              <div id="fl-note" class="fl-note" hidden></div>
+            </form>
+
+            <aside class="card preview" aria-labelledby="preview-title">
+              <div class="preview-head">
+                <p id="preview-title">Materials needed · updates live</p>
+                <strong id="preview-summary"></strong>
+              </div>
+              <ul id="preview-list" class="mat-list"></ul>
+              <div class="preview-foot">
+                <div class="preview-total"><span class="muted">Materials, best price</span><strong id="preview-total">$0.00</strong></div>
+                <button type="submit" form="calc-form" class="btn btn-accent btn-lg" id="add-btn">Add to project</button>
+                <button type="button" class="btn btn-ghost" id="cancel-edit" hidden>Cancel editing</button>
+                <p class="small muted" id="preview-note"></p>
+              </div>
+            </aside>
+          </div>
+
+          <div class="calc-bar" aria-hidden="true">
+            <span><small id="bar-summary"></small><strong id="bar-total">$0.00</strong></span>
+            <button type="submit" form="calc-form" class="btn btn-accent" tabindex="-1">Add</button>
+          </div>
+        </section>
+
+        <!-- ============ Estimate ============ -->
+        <section class="view" data-view="estimate" aria-labelledby="estimate-title" hidden>
+          <div class="view-head">
+            <div>
+              <h1 id="estimate-title">Project estimate</h1>
+              <p class="muted" id="estimate-sub"></p>
+            </div>
+            <div class="actions">
+              <button id="export-btn" type="button" class="btn btn-ghost"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 21h16" /></svg>CSV</button>
+              <button id="print-btn" type="button" class="btn btn-ghost"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M6 14h12v7H6Z" /></svg>Client quote</button>
+              <button id="clear-btn" type="button" class="btn btn-danger">Clear</button>
+            </div>
+          </div>
+
+          <div id="empty-state" class="card empty">
+            <svg class="empty-art" viewBox="0 0 200 180" aria-hidden="true">
+              <rect x="40" y="24" width="120" height="146" rx="12" class="ea-paper" />
+              <rect x="72" y="12" width="56" height="26" rx="6" class="ea-clip" />
+              <path d="M64 70h72M64 94h72M64 118h44" class="ea-lines" />
+              <circle cx="150" cy="140" r="26" class="ea-plus-bg" />
+              <path d="M150 128v24M138 140h24" class="ea-plus" />
+            </svg>
+            <div class="empty-text">
+              <h2>Your estimate is empty</h2>
+              <p class="muted">Calculate the materials for any part of the remodel and add it here. BuildCost totals it up with Florida sales tax and finds the cheapest supplier for each item.</p>
+              <div class="actions">
+                <button type="button" class="btn btn-accent btn-lg" id="sample-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4l14 8-14 8Z" /></svg>Try a sample project</button>
+                <a href="#calculator" class="btn btn-ghost btn-lg">Start from scratch</a>
+              </div>
+              <ol class="how">
+                <li><b>1</b><span><strong>Pick a project type</strong> Floors, tile, impact windows, stucco, roof…</span></li>
+                <li><b>2</b><span><strong>Enter sizes</strong> Quick sizes help. Waste is added for you.</span></li>
+                <li><b>3</b><span><strong>Add and compare</strong> See the total and the cheapest supplier.</span></li>
+              </ol>
+            </div>
+          </div>
+
+          <div id="estimate-body" hidden>
+            <div id="print-header" class="print-header"></div>
+
+            <details class="card quote-card" id="quote-card">
+              <summary><span>Quote details</span><small class="muted" id="quote-summary"></small></summary>
+              <div class="quote-fields">
+                <label class="field"><span class="field-label">Company</span><input id="q-company" data-quote="company" type="text" maxlength="80" placeholder="Your remodeling company" /></label>
+                <label class="field"><span class="field-label">Client</span><input id="q-client" data-quote="client" type="text" maxlength="80" placeholder="Homeowner name" /></label>
+                <label class="field field-wide"><span class="field-label">Job address</span><input id="q-address" data-quote="address" type="text" maxlength="120" placeholder="Street, city, FL" /></label>
+                <label class="field"><span class="field-label">Quote date</span><input id="q-date" data-quote="date" type="date" /></label>
+              </div>
+            </details>
+
+            <ul id="job-list" class="job-list"></ul>
+
+            <section class="buy-from" aria-labelledby="buy-title">
+              <h2 id="buy-title" class="eyebrow">Buy from</h2>
+              <div id="buy-cards" class="buy-cards" role="radiogroup" aria-labelledby="buy-title"></div>
+            </section>
+
+            <div class="estimate-layout">
+              <section class="card table-card" aria-labelledby="mat-title">
+                <div class="card-head">
+                  <h2 id="mat-title">Materials</h2>
+                  <span class="small muted">Adjust quantities – totals update instantly</span>
+                </div>
+                <div class="table-wrap">
+                  <table class="table est-table">
+                    <thead><tr><th scope="col">Material</th><th scope="col" class="center">Qty</th><th scope="col" class="num">Unit price</th><th scope="col" class="num">Line total</th></tr></thead>
+                    <tbody id="estimate-rows"></tbody>
+                    <tfoot><tr><th scope="row" colspan="3">Materials subtotal</th><td class="num" id="mat-subtotal"></td></tr></tfoot>
+                  </table>
+                </div>
+              </section>
+
+              <aside class="totals-col" aria-label="Totals">
+                <div class="card total-card">
+                  <p class="total-label">Estimated project total</p>
+                  <p class="total-big" id="grand-total">$0.00</p>
+                  <div id="savings-note"></div>
+                  <dl id="totals-list" class="totals-list"></dl>
+                  <a href="#compare" class="btn btn-accent btn-block">Compare suppliers</a>
+                </div>
+
+                <div class="card adjust-card">
+                  <h2 class="eyebrow">Adjustments</h2>
+                  <div class="adjusters">
+                    <div class="field"><div class="field-label"><label for="tax">Sales tax</label><button type="button" class="info" data-tip="tax" aria-label="About sales tax" aria-expanded="false">i</button></div><div class="input-unit"><input id="tax" type="number" min="0" step="0.25" inputmode="decimal" /><span>%</span></div><p class="tip" data-tip-body="tax" hidden></p></div>
+                    <div class="field"><div class="field-label"><label for="delivery">Delivery</label><button type="button" class="info" data-tip="delivery" aria-label="About delivery" aria-expanded="false">i</button></div><div class="input-unit"><input id="delivery" type="number" min="0" step="5" inputmode="decimal" /><span>$</span></div><p class="tip" data-tip-body="delivery" hidden></p></div>
+                    <div class="field"><div class="field-label"><label for="labor">Labor</label><button type="button" class="info" data-tip="labor" aria-label="About labor" aria-expanded="false">i</button></div><div class="input-unit"><input id="labor" type="number" min="0" step="5" inputmode="decimal" /><span>% mat.</span></div><p class="tip" data-tip-body="labor" hidden></p></div>
+                    <div class="field"><div class="field-label"><label for="contingency">Contingency</label><button type="button" class="info" data-tip="contingency" aria-label="About contingency" aria-expanded="false">i</button></div><div class="input-unit"><input id="contingency" type="number" min="0" step="1" inputmode="decimal" /><span>%</span></div><p class="tip" data-tip-body="contingency" hidden></p></div>
+                    <div class="field field-wide"><div class="field-label"><label for="markup">Overhead &amp; profit</label><button type="button" class="info" data-tip="markup" aria-label="About overhead and profit" aria-expanded="false">i</button></div><div class="input-unit"><input id="markup" type="number" min="0" step="1" inputmode="decimal" /><span>%</span></div><p class="tip" data-tip-body="markup" hidden></p></div>
+                  </div>
+                </div>
+
+                <div class="fl-note fl-card" id="fl-checklist"></div>
+              </aside>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ Compare ============ -->
+        <section class="view" data-view="compare" aria-labelledby="compare-title" hidden>
+          <div class="view-head">
+            <div>
+              <h1 id="compare-title">Compare suppliers</h1>
+              <p class="muted" id="price-note"></p>
+            </div>
+            <div class="actions"><button id="reset-prices" type="button" class="btn btn-ghost">Reset prices</button></div>
+          </div>
+          <p id="compare-empty" class="card empty-small muted">Add a calculation to compare suppliers. <a href="#calculator">Open the calculator</a></p>
+          <div id="compare-body">
+            <div id="best-banner"></div>
+            <section class="card" aria-labelledby="opt-title">
+              <h2 id="opt-title" class="card-title">Total by option</h2>
+              <div id="compare-cards" class="option-bars"></div>
+            </section>
+            <section class="card table-card" aria-labelledby="lines-title">
+              <div class="card-head">
+                <h2 id="lines-title">Prices by material</h2>
+                <div class="legend small"><span><i class="lg lg-best"></i>Lowest</span><span><i class="lg lg-edit"></i>Your quote</span></div>
+              </div>
+              <div class="table-wrap">
+                <table class="table compare">
+                  <thead id="compare-head"></thead>
+                  <tbody id="compare-rows"></tbody>
+                  <tfoot id="compare-foot"></tfoot>
+                </table>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <!-- ============ Florida materials ============ -->
+        <section class="view" data-view="materials" aria-labelledby="mat-cat-title" hidden>
+          <div class="view-head">
+            <div>
+              <p class="eyebrow-sm">Built for Florida heat, humidity and hurricanes</p>
+              <h1 id="mat-cat-title">Florida materials</h1>
+            </div>
+          </div>
+          <div class="type-tools">
+            <label class="search">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+              <span class="sr-only">Search materials</span>
+              <input id="mat-search" type="search" placeholder="Search materials" autocomplete="off" />
+            </label>
+            <div class="chips" role="group" aria-label="Category" id="mat-cats"></div>
+          </div>
+          <div id="mat-grid" class="mat-grid"></div>
+          <p class="small muted">Code references are general guidance. Exterior products (windows, doors, shutters, roofing) need a Florida Product Approval number – ask your supplier for it.</p>
+        </section>
+
+        <!-- ============ Codes ============ -->
+        <section class="view" data-view="codes" aria-labelledby="codes-title" hidden>
+          <div class="view-head">
+            <div>
+              <p class="eyebrow-sm" id="codes-loc"></p>
+              <h1 id="codes-title">Florida codes &amp; permits</h1>
+            </div>
+            <div class="actions"><button type="button" class="btn btn-ghost" id="codes-print"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M6 14h12v7H6Z" /></svg>Print checklist</button></div>
+          </div>
+          <div id="codes-facts" class="facts"></div>
+          <div class="codes-layout">
+            <section class="card scope-card" aria-labelledby="scope-title">
+              <h2 id="scope-title" class="card-title">What's in your project?</h2>
+              <p class="small muted">Pick everything that applies. Items from your estimate are pre-checked.</p>
+              <div id="scope-list" class="scope-list"></div>
+            </section>
+            <section class="codes-out" aria-labelledby="need-title">
+              <div class="card-head plain">
+                <h2 id="need-title" class="card-title">What you'll need <span class="muted" id="need-count"></span></h2>
+                <span class="small muted">Florida Building Code, 8th Edition (2023) + Florida Statutes</span>
+              </div>
+              <div id="req-groups"></div>
+              <p class="small muted">General guidance, not legal advice. Rules change and cities add their own – confirm with your local building department before you start. Verify contractor licenses at <a href="https://www.myfloridalicense.com" target="_blank" rel="noopener">myfloridalicense.com</a>.</p>
+            </section>
+          </div>
+        </section>
+
+        <footer class="footer">Estimates use common trade rules of thumb. Confirm quantities, prices and code requirements with your suppliers and building department before ordering.</footer>
+      </main>
+    </div>
   </div>
 
-  <main class="app">
-    <header class="topbar">
-      <div>
-        <h1>🏗️ BuildCost</h1>
-        <p class="muted">Home remodeling estimates: materials, client quotes and supplier prices in one place.</p>
+  <dialog id="location-dialog" class="dialog" aria-labelledby="loc-title">
+    <form method="dialog" id="location-form">
+      <h2 id="loc-title">Project location</h2>
+      <p class="small muted">Used for sales tax and the Florida codes checklist.</p>
+      <label class="field"><span class="field-label">City</span><input id="loc-city-input" type="text" maxlength="60" required /></label>
+      <label class="field"><span class="field-label">County</span><select id="loc-county-input"></select></label>
+      <label class="field"><span class="field-label">County sales surtax</span><span class="input-unit"><input id="loc-surtax-input" type="number" min="0" max="3" step="0.25" inputmode="decimal" /><span>%</span></span></label>
+      <p class="small muted">Florida's state rate is 6%. Check your county's current surtax with the Florida Department of Revenue.</p>
+      <div class="actions end">
+        <button type="button" class="btn btn-ghost" id="loc-cancel">Cancel</button>
+        <button type="submit" class="btn btn-dark" value="save">Save location</button>
       </div>
-      <div class="theme-switch glass" role="radiogroup" aria-label="Color theme">
-        <button type="button" role="radio" data-theme-choice="light" aria-checked="false">☀️ Light</button>
-        <button type="button" role="radio" data-theme-choice="dark" aria-checked="false">🌙 Dark</button>
-        <button type="button" role="radio" data-theme-choice="system" aria-checked="false">💻 System</button>
-      </div>
-    </header>
+    </form>
+  </dialog>
 
-    <!-- Step 1: quantity calculator -->
-    <section class="glass panel" aria-labelledby="calc-title">
-      <h2 id="calc-title">1 · Calculate materials</h2>
-      <div id="type-picker" class="type-picker" role="tablist" aria-label="Project type"></div>
-
-      <form id="calc-form" class="calc-form" autocomplete="off">
-        <div id="fields" class="fields"></div>
-        <div class="fields">
-          <label class="field">
-            <span>Waste allowance <small>%</small></span>
-            <input id="waste" name="waste" type="number" min="0" step="1" />
-          </label>
-          <label class="field wide">
-            <span>Label</span>
-            <input id="job-label" type="text" maxlength="60" placeholder="e.g. Master bath floor" />
-          </label>
-        </div>
-
-        <div class="preview glass-inner">
-          <div class="preview-head">
-            <strong id="preview-title">Materials needed</strong>
-            <span id="preview-summary" class="muted small"></span>
-          </div>
-          <ul id="preview-list" class="preview-list"></ul>
-        </div>
-
-        <button type="submit" class="btn primary">＋ Add to project</button>
-      </form>
-    </section>
-
-    <!-- Step 2: estimate -->
-    <section class="glass panel" aria-labelledby="estimate-title">
-      <div class="panel-head">
-        <h2 id="estimate-title">2 · Project estimate</h2>
-        <div class="panel-actions">
-          <button id="export-btn" type="button" class="btn">⬇ CSV</button>
-          <button id="print-btn" type="button" class="btn">🖨 Client quote</button>
-          <button id="clear-btn" type="button" class="btn danger">Clear</button>
-        </div>
-      </div>
-
-      <div class="quote-fields">
-        <label class="field"><span>Company</span><input id="q-company" data-quote="company" type="text" maxlength="80" placeholder="Your remodeling company" /></label>
-        <label class="field"><span>Client</span><input id="q-client" data-quote="client" type="text" maxlength="80" placeholder="Homeowner name" /></label>
-        <label class="field wide"><span>Job address</span><input id="q-address" data-quote="address" type="text" maxlength="120" placeholder="Street, city" /></label>
-        <label class="field"><span>Quote date</span><input id="q-date" data-quote="date" type="date" /></label>
-      </div>
-
-      <div id="print-header" class="print-header"></div>
-
-      <ul id="job-list" class="job-list"></ul>
-      <p id="empty-state" class="empty muted">Add a calculation above to start your estimate.</p>
-
-      <div id="estimate-body">
-        <label class="field inline">
-          <span>Buy from</span>
-          <select id="supplier-select"></select>
-        </label>
-
-        <div class="table-wrap">
-          <table class="table">
-            <thead>
-              <tr><th>Material</th><th class="num">Qty</th><th class="num">Unit price</th><th class="supplier-col">Supplier</th><th class="num">Line total</th></tr>
-            </thead>
-            <tbody id="estimate-rows"></tbody>
-          </table>
-        </div>
-
-        <div class="totals">
-          <div class="adjusters">
-            <label class="field"><span>Sales tax <small>%</small></span><input id="tax" type="number" min="0" step="0.25" /></label>
-            <label class="field"><span>Delivery <small>$</small></span><input id="delivery" type="number" min="0" step="5" /></label>
-            <label class="field"><span>Labor <small>% of materials</small></span><input id="labor" type="number" min="0" step="5" /></label>
-            <label class="field"><span>Contingency <small>%</small></span><input id="contingency" type="number" min="0" step="1" /></label>
-            <label class="field"><span>Overhead &amp; profit <small>%</small></span><input id="markup" type="number" min="0" step="1" /></label>
-          </div>
-          <dl id="totals-list" class="totals-list glass-inner"></dl>
-        </div>
-      </div>
-    </section>
-
-    <!-- Step 3: comparison -->
-    <section id="compare-section" class="glass panel" aria-labelledby="compare-title">
-      <div class="panel-head">
-        <h2 id="compare-title">3 · Compare suppliers</h2>
-        <button id="reset-prices" type="button" class="btn">Reset prices</button>
-      </div>
-      <p id="price-note" class="muted small"></p>
-      <div class="table-wrap">
-        <table class="table compare">
-          <thead id="compare-head"></thead>
-          <tbody id="compare-rows"></tbody>
-          <tfoot id="compare-foot"></tfoot>
-        </table>
-      </div>
-      <div id="compare-cards" class="compare-cards"></div>
-    </section>
-
-    <footer class="footer">Estimates use common trade rules of thumb. Confirm quantities and prices with your suppliers before ordering.</footer>
-  </main>
+  <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
 
   <script src="calculator.js"></script>
   <script src="pricing.js"></script>
